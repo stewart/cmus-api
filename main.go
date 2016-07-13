@@ -16,13 +16,13 @@ func init() {
 	if port == "" {
 		port = "3000"
 	}
-}
 
-func main() {
 	if err := client.Connect(); err != nil {
 		log.Fatal(err)
 	}
+}
 
+func main() {
 	router.GET("/", func(c *gin.Context) {
 		status, err := client.Status()
 		if err != nil {
