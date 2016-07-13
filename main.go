@@ -9,8 +9,9 @@ import (
 )
 
 var port = os.Getenv("PORT")
-var router = gin.Default()
 var client = cmus.Client{}
+
+var state = &State{}
 
 func init() {
 	if port == "" {
@@ -20,20 +21,31 @@ func init() {
 	if err := client.Connect(); err != nil {
 		log.Fatal(err)
 	}
+
+	status, err := client.Status()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	state.Lock()
+	state.status = status
+	state.err = nil
+	state.Unlock()
 }
 
 func main() {
+	router := gin.Default()
+
 	router.GET("/", func(c *gin.Context) {
-		status, err := client.Status()
-		if err != nil {
-			c.JSON(500, gin.H{
-				"error": err.Error(),
-			})
+		state.RLock()
+		defer state.RUnlock()
 
-			client.Connect()
-
+		if state.err != nil {
+			c.JSON(500, gin.H{"error": state.err.Error()})
 			return
 		}
+
+		status := state.status
 
 		c.JSON(200, gin.H{
 			"playing":  status.Playing,
@@ -44,6 +56,8 @@ func main() {
 			"settings": status.Settings,
 		})
 	})
+
+	loop()
 
 	router.Run(":" + port)
 }
