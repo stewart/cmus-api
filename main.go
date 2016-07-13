@@ -30,6 +30,8 @@ func main() {
 				"error": err.Error(),
 			})
 
+			client.Connect()
+
 			return
 		}
 
