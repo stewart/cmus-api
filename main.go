@@ -57,6 +57,39 @@ func main() {
 		})
 	})
 
+	command := func(c *gin.Context, err error) {
+		if err != nil {
+			c.JSON(500, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.Status(204)
+	}
+
+	router.PUT("/play-pause", func(c *gin.Context) {
+		command(c, client.PlayPause())
+	})
+
+	router.PUT("/stop", func(c *gin.Context) {
+		command(c, client.Stop())
+	})
+
+	router.PUT("/prev", func(c *gin.Context) {
+		command(c, client.Prev())
+	})
+
+	router.PUT("/next", func(c *gin.Context) {
+		command(c, client.Next())
+	})
+
+	router.PUT("/repeat", func(c *gin.Context) {
+		command(c, client.Repeat())
+	})
+
+	router.PUT("/shuffle", func(c *gin.Context) {
+		command(c, client.Shuffle())
+	})
+
 	loop()
 
 	router.Run(":" + port)
