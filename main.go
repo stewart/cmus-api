@@ -5,24 +5,20 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
-	"github.com/stewart/cmus"
 )
 
 var port = os.Getenv("PORT")
-var client = cmus.Client{}
-
-var state = &State{}
 
 func init() {
 	if port == "" {
 		port = "3000"
 	}
 
-	if err := client.Connect(); err != nil {
+	if err := state.cmus.Connect(); err != nil {
 		log.Fatal(err)
 	}
 
-	status, err := client.Status()
+	status, err := state.cmus.Status()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -67,27 +63,27 @@ func main() {
 	}
 
 	router.PUT("/play-pause", func(c *gin.Context) {
-		command(c, client.PlayPause())
+		command(c, state.cmus.PlayPause())
 	})
 
 	router.PUT("/stop", func(c *gin.Context) {
-		command(c, client.Stop())
+		command(c, state.cmus.Stop())
 	})
 
 	router.PUT("/prev", func(c *gin.Context) {
-		command(c, client.Prev())
+		command(c, state.cmus.Prev())
 	})
 
 	router.PUT("/next", func(c *gin.Context) {
-		command(c, client.Next())
+		command(c, state.cmus.Next())
 	})
 
 	router.PUT("/repeat", func(c *gin.Context) {
-		command(c, client.Repeat())
+		command(c, state.cmus.Repeat())
 	})
 
 	router.PUT("/shuffle", func(c *gin.Context) {
-		command(c, client.Shuffle())
+		command(c, state.cmus.Shuffle())
 	})
 
 	loop()

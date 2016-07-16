@@ -18,7 +18,7 @@ func loop() {
 }
 
 func fetch() {
-	status, err := client.Status()
+	status, err := state.cmus.Status()
 
 	state.Lock()
 	state.status = status
@@ -29,5 +29,5 @@ func fetch() {
 func reconnect() {
 	state.Lock()
 	state.Unlock()
-	state.err = client.Connect()
+	state.err = state.cmus.Connect()
 }

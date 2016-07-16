@@ -8,7 +8,9 @@ import (
 
 type State struct {
 	sync.RWMutex
-
+	cmus   *cmus.Client
 	status *cmus.Status
 	err    error
 }
+
+var state = &State{}
