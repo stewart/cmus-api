@@ -13,6 +13,10 @@ func init() {
 	if port == "" {
 		port = "3000"
 	}
+}
+
+func main() {
+	router := gin.Default()
 
 	if err := state.cmus.Connect(); err != nil {
 		log.Fatal(err)
@@ -27,10 +31,6 @@ func init() {
 	state.status = status
 	state.err = nil
 	state.Unlock()
-}
-
-func main() {
-	router := gin.Default()
 
 	router.GET("/", func(c *gin.Context) {
 		state.RLock()
