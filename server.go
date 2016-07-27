@@ -28,16 +28,7 @@ func server() {
 			return
 		}
 
-		s := state.status
-
-		c.JSON(200, gin.H{
-			"playing":  s.Playing,
-			"file":     s.File,
-			"duration": s.Duration,
-			"position": s.Position,
-			"tags":     s.Tags,
-			"settings": s.Settings,
-		})
+		c.JSON(200, serializeStatus(state.status))
 	})
 
 	router.PUT("/play-pause", func(c *gin.Context) {

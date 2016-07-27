@@ -38,3 +38,15 @@ func isDifferentStatus(a, b *cmus.Status) bool {
 
 	return false
 }
+
+// converts a status into a map that Gin can serialize
+func serializeStatus(s *cmus.Status) map[string]interface{} {
+	return map[string]interface{}{
+		"playing":  s.Playing,
+		"file":     s.File,
+		"duration": s.Duration,
+		"position": s.Position,
+		"tags":     s.Tags,
+		"settings": s.Settings,
+	}
+}
