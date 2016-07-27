@@ -18,6 +18,26 @@ func server() {
 	router := gin.Default()
 
 	router.GET("/", func(c *gin.Context) {
+		state.RLock()
+		defer state.RUnlock()
+
+		if state.err != nil {
+			c.JSON(500, gin.H{
+				"error": state.err.Error(),
+			})
+			return
+		}
+
+		s := state.status
+
+		c.JSON(200, gin.H{
+			"playing":  s.Playing,
+			"file":     s.File,
+			"duration": s.Duration,
+			"position": s.Position,
+			"tags":     s.Tags,
+			"settings": s.Settings,
+		})
 	})
 
 	router.PUT("/play-pause", func(c *gin.Context) {
