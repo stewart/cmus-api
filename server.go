@@ -101,5 +101,31 @@ func server() {
 		command(c, client.Shuffle())
 	})
 
+	router.PUT("/volume", func(c *gin.Context) {
+		post := struct{ Level string }{}
+
+		c.BindJSON(&post)
+
+		if post.Level == "" {
+			c.JSON(400, gin.H{"error": "volume level not supplied"})
+			return
+		}
+
+		command(c, client.Volume(post.Level))
+	})
+
+	router.PUT("/seek", func(c *gin.Context) {
+		post := struct{ Position string }{}
+
+		c.BindJSON(&post)
+
+		if post.Position == "" {
+			c.JSON(400, gin.H{"error": "seek position not supplied"})
+			return
+		}
+
+		command(c, client.Seek(post.Position))
+	})
+
 	router.Run(":" + port)
 }
