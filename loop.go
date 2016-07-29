@@ -17,9 +17,7 @@ func loop() {
 		state.Lock()
 
 		if err == nil {
-			if isDifferentStatus(state.status, status) {
-				state.status = status
-			}
+			state.status = status
 		} else {
 			// error when fetching status, attempt to reconnect
 			client.Connect()
