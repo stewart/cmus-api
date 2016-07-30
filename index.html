@@ -23,12 +23,18 @@
         <dt>Album<dt>
         <dd class="album"></dd>
       </dl>
+
+      <div id="controls">
+        <a href="" data-action="prev">Prev</a>
+        <a href="" data-action="play-pause">Play/Pause</a>
+        <a href="" data-action="next">Next</a>
+      </div>
     </div>
 
     <script>
-      var ENDPOINT = "http://localhost:3000/"
+      var slice = Array.prototype.slice;
 
-      var evt = new EventSource(ENDPOINT + "sse");
+      var evt = new EventSource("/sse");
 
       var title = document.querySelector(".title"),
           artist = document.querySelector(".artist"),
@@ -39,6 +45,20 @@
         function pad(s) { return ("00" + s).slice(-2); }
         function format(t) { return `${pad(Math.floor(t / 60))}:${pad(t % 60)}`; }
         return `${format(p)} / ${format(d)}`
+      }
+
+      function cmusCommand(name, args) {
+        var request = new XMLHttpRequest();
+
+        request.open('PUT', '/' + name, true);
+
+        request.onload = function() {
+          if (request.status != 204) { console.error(request); }
+        };
+
+        request.onerror = console.error.bind(console);
+
+        request.send();
       }
 
       evt.addEventListener("status", function(evt) {
@@ -54,6 +74,18 @@
 
       evt.addEventListener("error", function(evt) {
         console.error(evt.data);
+      });
+
+      var actions = document.querySelectorAll("a[data-action]")
+
+      document.addEventListener("click", function(evt) {
+        if (slice.call(actions).indexOf(evt.target) >= 0) {
+          var request = new XMLHttpRequest(),
+              action = evt.target.attributes["data-action"].value;
+
+          cmusCommand(action);
+          evt.preventDefault();
+        }
       });
     </script>
   </body>
