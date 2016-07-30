@@ -60,9 +60,11 @@ func server() {
 			err := state.err
 
 			if err == nil {
+				diff := diffStatus(prevStatus, status)
+
 				// if previous message was an error, or status has changed, send
-				if prevErr != nil || isDifferentStatus(prevStatus, status) || !initial {
-					c.SSEvent("status", serializeStatus(status))
+				if prevErr != nil || len(diff) > 0 || !initial {
+					c.SSEvent("status", diff)
 					initial = true
 				}
 			} else {

@@ -8,8 +8,6 @@
     </style>
   </head>
   <body>
-    <h1> CMUS Remote </h1>
-
     <div class="container">
       <h2 class="title"></h2>
 
@@ -32,9 +30,11 @@
     </div>
 
     <script>
-      var slice = Array.prototype.slice;
+      var data = {},
+          evt = new EventSource("/sse");
 
-      var evt = new EventSource("/sse");
+      var slice = Array.prototype.slice,
+          isArray = Array.isArray;
 
       var title = document.querySelector(".title"),
           artist = document.querySelector(".artist"),
@@ -61,13 +61,35 @@
         request.send();
       }
 
-      evt.addEventListener("status", function(evt) {
-        var data = JSON.parse(evt.data);
-
+      function render() {
         title.innerHTML = data.tags.title;
         artist.innerHTML = data.tags.artist;
         album.innerHTML = data.tags.album;
         playback.innerHTML = time(data.position, data.duration);
+      }
+
+      evt.addEventListener("status", function(evt) {
+        var update = JSON.parse(evt.data);
+
+        function merge(dest, source) {
+          return function(key) {
+            if (isArray(dest[key]) && isArray(source[key])) {
+              dest[key] = source[key];
+              return;
+            }
+
+            if ((typeof(dest[key]) === "object") && (typeof(source[key]) === "object")) {
+              Object.keys(source[key]).forEach(merge(dest[key], source[key]));
+              return;
+            }
+
+            dest[key] = source[key];
+          }
+        }
+
+        Object.keys(update).forEach(merge(data, update));
+
+        render();
       });
 
       evt.onerror = console.error.bind(console);
