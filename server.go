@@ -20,6 +20,8 @@ func init() {
 func server() {
 	router := gin.Default()
 
+	router.Use(CORS())
+
 	command := func(c *gin.Context, err error) {
 		if err != nil {
 			c.JSON(500, gin.H{"error": err.Error()})
