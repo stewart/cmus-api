@@ -31,7 +31,9 @@ func server() {
 		c.Status(204)
 	}
 
-	router.GET("/", func(c *gin.Context) {
+	router.StaticFile("/", "./index.html")
+
+	router.GET("/status.json", func(c *gin.Context) {
 		state.RLock()
 		defer state.RUnlock()
 
