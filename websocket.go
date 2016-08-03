@@ -1,7 +1,9 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -22,12 +24,36 @@ func wshandler(w http.ResponseWriter, r *http.Request) {
 
 	diffs, errs := poll()
 
+	commands := make(chan map[string]string)
+
+	go func() {
+		for {
+			cmd := make(map[string]string)
+
+			_, message, err := conn.ReadMessage()
+			if err != nil {
+				if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway) {
+					log.Printf("error: %v", err)
+				}
+				break
+			}
+
+			if err := json.Unmarshal(message, &cmd); err != nil {
+				log.Printf("error: %v", err)
+			}
+
+			commands <- cmd
+		}
+	}()
+
 	for {
 		select {
 		case diff := <-diffs:
 			conn.WriteJSON(diff)
 		case err := <-errs:
 			conn.WriteJSON(gin.H{"error": err.Error()})
+		case cmd := <-commands:
+			client.Cmd(cmd["command"])
 		}
 	}
 }

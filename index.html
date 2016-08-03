@@ -23,15 +23,18 @@
       </dl>
 
       <div id="controls">
-        <a href="" data-action="prev">Prev</a>
-        <a href="" data-action="play-pause">Play/Pause</a>
-        <a href="" data-action="next">Next</a>
+        <a href="" data-action="player-prev">Prev</a>
+        <a href="" data-action="player-pause">Play/Pause</a>
+        <a href="" data-action="player-next">Next</a>
       </div>
     </div>
 
     <script>
-      var data = {},
-          evt = new EventSource("/sse");
+      var ENDPOINT = "ws://" + window.location.host + "/ws",
+          TIMEOUT_CLOSE = 4000;
+
+      var socket = null,
+          data = {};
 
       var slice = Array.prototype.slice,
           isArray = Array.isArray;
@@ -47,68 +50,102 @@
         return `${format(p)} / ${format(d)}`
       }
 
-      function cmusCommand(name, args) {
-        var request = new XMLHttpRequest();
+      function merge(dest, source) {
+        return function(key) {
+          if (isArray(dest[key]) && isArray(source[key])) {
+            dest[key] = source[key];
+            return;
+          }
 
-        request.open('PUT', '/' + name, true);
+          if ((typeof(dest[key]) === "object") && (typeof(source[key]) === "object")) {
+            Object.keys(source[key]).forEach(merge(dest[key], source[key]));
+            return;
+          }
 
-        request.onload = function() {
-          if (request.status != 204) { console.error(request); }
-        };
-
-        request.onerror = console.error.bind(console);
-
-        request.send();
+          dest[key] = source[key];
+        }
       }
 
       function render() {
         title.innerHTML = data.tags.title;
         artist.innerHTML = data.tags.artist;
         album.innerHTML = data.tags.album;
-        playback.innerHTML = time(data.position, data.duration);
+        playback.innerHTML = time(data.position || 0, data.duration);
       }
 
-      evt.addEventListener("status", function(evt) {
-        var update = JSON.parse(evt.data);
+      function command(action) {
+        var payload = JSON.stringify({
+          command: action,
+        })
 
-        function merge(dest, source) {
-          return function(key) {
-            if (isArray(dest[key]) && isArray(source[key])) {
-              dest[key] = source[key];
-              return;
-            }
+        socket.send(payload);
+      }
 
-            if ((typeof(dest[key]) === "object") && (typeof(source[key]) === "object")) {
-              Object.keys(source[key]).forEach(merge(dest[key], source[key]));
-              return;
-            }
+      function connect() {
+        var timeout;
 
-            dest[key] = source[key];
-          }
+        if (socket != null) {
+          // existing socket present, disconnect it
+          socket.close(TIMEOUT_CLOSE);
         }
 
-        Object.keys(update).forEach(merge(data, update));
+        socket = new WebSocket(ENDPOINT);
 
-        render();
-      });
+        timeout = setTimeout(function() {
+          socket.close(TIMEOUT_CLOSE, "timeout");
+        }, 5000);
 
-      evt.onerror = console.error.bind(console);
+        socket.addEventListener("open", onOpen(timeout));
+        socket.addEventListener("close", onClose(timeout));
+      }
 
-      evt.addEventListener("error", function(evt) {
-        console.error(evt.data);
-      });
+      function onClose(timeout) {
+        return function(event) {
+          clearTimeout(timeout);
+
+          if (event.code == TIMEOUT_CLOSE) {
+            connect();
+          } else {
+            setTimeout(connect, 1000);
+          }
+        }
+      }
+
+      function onOpen(timeout) {
+        return function() {
+          clearTimeout(timeout);
+
+          socket.addEventListener("message", onMessage);
+          socket.addEventListener("error", onError);
+        }
+      }
+
+      function onMessage(event) {
+        var json = JSON.parse(event.data);
+
+        if (json.error) {
+          console.error(json.error);
+        } else {
+          Object.keys(json).forEach(merge(data, json));
+          render();
+        }
+      }
+
+      function onError(event) {
+        console.error("error", event);
+      }
 
       var actions = document.querySelectorAll("a[data-action]")
 
-      document.addEventListener("click", function(evt) {
-        if (slice.call(actions).indexOf(evt.target) >= 0) {
-          var request = new XMLHttpRequest(),
-              action = evt.target.attributes["data-action"].value;
-
-          cmusCommand(action);
-          evt.preventDefault();
+      document.addEventListener("click", function(event) {
+        if (slice.call(actions).indexOf(event.target) >= 0) {
+          var action = event.target.attributes["data-action"].value;
+          command(action);
+          event.preventDefault();
         }
       });
+
+      connect();
     </script>
   </body>
 </html>
