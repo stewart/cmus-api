@@ -3,10 +3,8 @@ package main
 import (
 	"io"
 	"os"
-	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/stewart/cmus"
 )
 
 var port = os.Getenv("PORT")
@@ -48,36 +46,15 @@ func server() {
 	})
 
 	router.GET("/sse", func(c *gin.Context) {
-		initial := false
-		prevStatus := &cmus.Status{}
-		var prevErr error
+		diffs, errs := poll()
 
 		c.Stream(func(w io.Writer) bool {
-			state.RLock()
-			defer state.RUnlock()
-
-			status := state.status
-			err := state.err
-
-			if err == nil {
-				diff := diffStatus(prevStatus, status)
-
-				// if previous message was an error, or status has changed, send
-				if prevErr != nil || len(diff) > 0 || !initial {
-					c.SSEvent("status", diff)
-					initial = true
-				}
-			} else {
-				// if a new error, send error
-				if prevErr == nil || prevErr.Error() != err.Error() {
-					c.SSEvent("error", err.Error())
-				}
+			select {
+			case diff := <-diffs:
+				c.SSEvent("status", diff)
+			case err := <-errs:
+				c.SSEvent("error", err.Error())
 			}
-
-			prevStatus = status
-			prevErr = err
-
-			time.Sleep(50 * time.Millisecond)
 
 			return true
 		})
