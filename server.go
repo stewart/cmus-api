@@ -60,6 +60,10 @@ func server() {
 		})
 	})
 
+	router.GET("/ws", func(c *gin.Context) {
+		wshandler(c.Writer, c.Request)
+	})
+
 	router.PUT("/play-pause", func(c *gin.Context) {
 		command(c, client.PlayPause())
 	})
