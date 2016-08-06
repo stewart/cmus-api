@@ -75,6 +75,56 @@
     </script>
 
     <script>
+      // 'store' acts somewhat like a redux-ish data store
+      //
+      // example usage:
+      //
+      //   store.subscribe(function() {
+      //     var state = store.getState();
+      //   });
+      //
+      //   store.dispatch({ type: "patch", data: { playback: 2 } });
+      //
+      var store = (function() {
+        var obj = {
+          state: {
+            tags: {},
+            settings: {}
+          },
+          callbacks: []
+        };
+
+        function reducer(state, action) {
+          switch (action.type) {
+            case "patch":
+              return merge(Object.assign({}, state), action.data);
+          }
+
+          return state;
+        }
+
+        function dispatch(action) {
+          obj.state = reducer(obj.state, action);
+          obj.callbacks.forEach(function(callback) { callback(); });
+        }
+
+        function subscribe(callback) {
+          obj.callbacks.push(callback);
+        }
+
+        function getState() {
+          return obj.state;
+        }
+
+        return {
+          dispatch: dispatch,
+          subscribe: subscribe,
+          getState: getState
+        };
+      })();
+    </script>
+
+    <script>
       var ENDPOINT = "ws://" + window.location.host + "/ws",
           TIMEOUT_CLOSE = 4000;
 
@@ -96,11 +146,15 @@
       }
 
       function render() {
+        var data = store.getState();
+
         title.innerHTML = data.tags.title;
         artist.innerHTML = data.tags.artist;
         album.innerHTML = data.tags.album;
         playback.innerHTML = time(data.position || 0, data.duration);
       }
+
+      store.subscribe(render);
 
       function command(action) {
         var payload = JSON.stringify({
@@ -155,8 +209,7 @@
         if (json.error) {
           console.error(json.error);
         } else {
-          Object.keys(json).forEach(merge(data, json));
-          render();
+          store.dispatch({ type: "patch", data: json });
         }
       }
 
