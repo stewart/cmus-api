@@ -86,7 +86,20 @@
         }
 
         function subscribe(callback) {
+          var isSubscribed = true;
+
           listeners.push(callback);
+
+          return function unsubscribe() {
+            if (!isSubscribed) {
+              return;
+            }
+
+            var index = listeners.indexOf(callback);
+
+            isSubscribed = false;
+            listeners.splice(index, 1);
+          }
         }
 
         function getState() {
