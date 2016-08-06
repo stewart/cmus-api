@@ -75,45 +75,22 @@
     </script>
 
     <script>
-      // 'store' acts somewhat like a redux-ish data store
-      //
-      // example usage:
-      //
-      //   store.subscribe(function() {
-      //     var state = store.getState();
-      //   });
-      //
-      //   store.dispatch({ type: "patch", data: { playback: 2 } });
-      //
-      var store = (function() {
-        var obj = {
-          state: {
-            tags: {},
-            settings: {}
-          },
-          callbacks: []
-        };
-
-        function reducer(state, action) {
-          switch (action.type) {
-            case "patch":
-              return merge(Object.assign({}, state), action.data);
-          }
-
-          return state;
-        }
+      // a redux-like dispatching data store
+      function createStore(reducer, initialState) {
+        var state = initialState,
+            listeners = [];
 
         function dispatch(action) {
-          obj.state = reducer(obj.state, action);
-          obj.callbacks.forEach(function(callback) { callback(); });
+          state = reducer(state, action);
+          listeners.forEach(function(callback) { callback(); });
         }
 
         function subscribe(callback) {
-          obj.callbacks.push(callback);
+          listeners.push(callback);
         }
 
         function getState() {
-          return obj.state;
+          return state;
         }
 
         return {
@@ -121,15 +98,28 @@
           subscribe: subscribe,
           getState: getState
         };
-      })();
+      };
+    </script>
+
+    <script>
+      // a reducer action to create a new state, given old state and an action
+      function reducer(state, action) {
+        switch (action.type) {
+          case "patch":
+            return merge(Object.assign({}, state), action.data);
+        }
+
+        return state;
+      }
     </script>
 
     <script>
       var ENDPOINT = "ws://" + window.location.host + "/ws",
           TIMEOUT_CLOSE = 4000;
 
-      var socket = null,
-          data = {};
+      var store = createStore(reducer, { tags: {}, settings: {} });
+
+      var socket = null;
 
       var slice = Array.prototype.slice,
           isArray = Array.isArray;
