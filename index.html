@@ -30,6 +30,51 @@
     </div>
 
     <script>
+      // https://github.com/KyleAMathews/deepmerge
+      // Copyright (c) 2012 Nicholas Fisher - MIT License
+      function merge(target, src) {
+        var array = Array.isArray(src);
+        var dest = array && [] || {};
+
+        if (array) {
+            target = target || [];
+            dest = dest.concat(target);
+            src.forEach(function(e, i) {
+                if (typeof dest[i] === 'undefined') {
+                    dest[i] = e;
+                } else if (typeof e === 'object') {
+                    dest[i] = merge(target[i], e);
+                } else {
+                    if (target.indexOf(e) === -1) {
+                        dest.push(e);
+                    }
+                }
+            });
+        } else {
+            if (target && typeof target === 'object') {
+                Object.keys(target).forEach(function (key) {
+                    dest[key] = target[key];
+                })
+            }
+            Object.keys(src).forEach(function (key) {
+                if (typeof src[key] !== 'object' || !src[key]) {
+                    dest[key] = src[key];
+                }
+                else {
+                    if (!target[key]) {
+                        dest[key] = src[key];
+                    } else {
+                        dest[key] = merge(target[key], src[key]);
+                    }
+                }
+            });
+        }
+
+        return dest;
+      }
+    </script>
+
+    <script>
       var ENDPOINT = "ws://" + window.location.host + "/ws",
           TIMEOUT_CLOSE = 4000;
 
@@ -48,22 +93,6 @@
         function pad(s) { return ("00" + s).slice(-2); }
         function format(t) { return `${pad(Math.floor(t / 60))}:${pad(t % 60)}`; }
         return `${format(p)} / ${format(d)}`
-      }
-
-      function merge(dest, source) {
-        return function(key) {
-          if (isArray(dest[key]) && isArray(source[key])) {
-            dest[key] = source[key];
-            return;
-          }
-
-          if ((typeof(dest[key]) === "object") && (typeof(source[key]) === "object")) {
-            Object.keys(source[key]).forEach(merge(dest[key], source[key]));
-            return;
-          }
-
-          dest[key] = source[key];
-        }
       }
 
       function render() {
