@@ -127,6 +127,22 @@
     </script>
 
     <script>
+      // a wrapper class around WebSockets (WIP)
+      var Socket = (function() {
+        function Socket(url) {
+          this.url = url;
+          this.ws = null;
+          this.connected = false;
+        }
+
+        Socket.prototype.connect = function() {
+        }
+
+        return Socket;
+      })();
+    </script>
+
+    <script>
       var ENDPOINT = "ws://" + window.location.host + "/ws",
           TIMEOUT_CLOSE = 4000;
 
