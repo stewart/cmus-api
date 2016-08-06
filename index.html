@@ -143,6 +143,40 @@
     </script>
 
     <script>
+      function render() {
+        var title = document.querySelector(".title"),
+            artist = document.querySelector(".artist"),
+            playback = document.querySelector(".playback"),
+            album = document.querySelector(".album");
+
+        // time(1, 60) -> "00:01 / 01:00"
+        function time(p, d) {
+          function pad(s) { return ("00" + s).slice(-2); }
+
+          function format(t) {
+            return `${pad(Math.floor(t / 60))}:${pad(t % 60)}`;
+          }
+
+          return `${format(p)} / ${format(d)}`
+        }
+
+        function draw() {
+          var state = store.getState(),
+              tags = state.tags;
+
+          window.requestAnimationFrame(function() {
+            title.innerHTML = tags.title;
+            artist.innerHTML = tags.artist;
+            album.innerHTML = tags.album;
+            playback.innerHTML = time(state.position || 0, state.duration);
+          });
+        }
+
+        return draw;
+      }
+    </script>
+
+    <script>
       var ENDPOINT = "ws://" + window.location.host + "/ws",
           TIMEOUT_CLOSE = 4000;
 
@@ -153,27 +187,7 @@
       var slice = Array.prototype.slice,
           isArray = Array.isArray;
 
-      var title = document.querySelector(".title"),
-          artist = document.querySelector(".artist"),
-          playback = document.querySelector(".playback"),
-          album = document.querySelector(".album");
-
-      function time(p, d) {
-        function pad(s) { return ("00" + s).slice(-2); }
-        function format(t) { return `${pad(Math.floor(t / 60))}:${pad(t % 60)}`; }
-        return `${format(p)} / ${format(d)}`
-      }
-
-      function render() {
-        var data = store.getState();
-
-        title.innerHTML = data.tags.title;
-        artist.innerHTML = data.tags.artist;
-        album.innerHTML = data.tags.album;
-        playback.innerHTML = time(data.position || 0, data.duration);
-      }
-
-      store.subscribe(render);
+      store.subscribe(render());
 
       function command(action) {
         var payload = JSON.stringify({
