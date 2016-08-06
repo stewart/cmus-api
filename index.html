@@ -8,7 +8,7 @@
 
       .container {
         margin: 0 auto;
-        padding-top: 2em;
+        padding: 2em 4em;
         max-width: 900px;
       }
 
@@ -64,6 +64,21 @@
         background: #333;
       }
 
+      #controls {
+        margin-top: 2em;
+        display: flex;
+        justify-content: space-around;
+      }
+
+      #controls a {
+        text-decoration: none;
+      }
+
+      #controls svg {
+        fill: #222;
+        width: 75px;
+        height: 75px;
+      }
     </style>
   </head>
   <body>
@@ -82,9 +97,20 @@
       </div>
 
       <div id="controls">
-        <a href="" data-action="player-prev">Prev</a>
-        <a href="" data-action="player-pause">Play/Pause</a>
-        <a href="" data-action="player-next">Next</a>
+        <a href="" data-action="player-prev">
+          <svg viewBox="0 0 1792 1792" xmlns="http://www.w3.org/2000/svg">
+            <path d="M1747 141q19-19 32-13t13 32v1472q0 26-13 32t-32-13l-710-710q-9-9-13-19v710q0 26-13 32t-32-13l-710-710q-9-9-13-19v678q0 26-19 45t-45 19h-128q-26 0-45-19t-19-45v-1408q0-26 19-45t45-19h128q26 0 45 19t19 45v678q4-11 13-19l710-710q19-19 32-13t13 32v710q4-11 13-19z"/>
+          </svg>
+        </a>
+
+        <!-- is dynamically set based on playback state -->
+        <a href="" data-attr="playpause" data-action="player-pause"></a>
+
+        <a href="" data-action="player-next">
+          <svg viewBox="0 0 1792 1792" xmlns="http://www.w3.org/2000/svg">
+            <path d="M45 1651q-19 19-32 13t-13-32v-1472q0-26 13-32t32 13l710 710q8 8 13 19v-710q0-26 13-32t32 13l710 710q8 8 13 19v-678q0-26 19-45t45-19h128q26 0 45 19t19 45v1408q0 26-19 45t-45 19h-128q-26 0-45-19t-19-45v-678q-5 10-13 19l-710 710q-19 19-32 13t-13-32v-710q-5 10-13 19z"/>
+          </svg>
+        </a>
       </div>
     </div>
 
@@ -205,10 +231,22 @@
       function render() {
         var title = document.querySelector("[data-attr=title]"),
             artist = document.querySelector("[data-attr=artist]"),
+            album = document.querySelector("[data-attr=album]"),
             progress = document.querySelector("[data-attr=progress]"),
             progressIndicator = document.querySelector("[data-attr=progress-indicator]"),
-            playback = document.querySelector(".playback"),
-            album = document.querySelector(".album");
+            playpause = document.querySelector("[data-attr=playpause]");
+
+        var play = `
+          <svg width="1792" height="1792" viewBox="0 0 1792 1792" xmlns="http://www.w3.org/2000/svg">
+            <path d="M1576 927l-1328 738q-23 13-39.5 3t-16.5-36v-1472q0-26 16.5-36t39.5 3l1328 738q23 13 23 31t-23 31z"/>
+          </svg>
+        `;
+
+        var pause = `
+          <svg viewBox="0 0 1792 1792" xmlns="http://www.w3.org/2000/svg">
+            <path d="M1664 192v1408q0 26-19 45t-45 19h-512q-26 0-45-19t-19-45v-1408q0-26 19-45t45-19h512q26 0 45 19t19 45zm-896 0v1408q0 26-19 45t-45 19h-512q-26 0-45-19t-19-45v-1408q0-26 19-45t45-19h512q26 0 45 19t19 45z"/>
+          </svg>
+        `;
 
         // time(1, 60) -> "00:01 / 01:00"
         function time(p, d) {
@@ -227,6 +265,12 @@
 
           window.requestAnimationFrame(function() {
             var width = (state.position / state.duration) * 100;
+
+            if (state.playing) {
+              playpause.innerHTML = pause;
+            } else {
+              playpause.innerHTML = play;
+            }
 
             title.innerHTML = tags.title;
             artist.innerHTML = tags.artist;
@@ -316,13 +360,17 @@
 
       var actions = document.querySelectorAll("a[data-action]")
 
-      document.addEventListener("click", function(event) {
-        if (slice.call(actions).indexOf(event.target) >= 0) {
-          var action = event.target.attributes["data-action"].value;
-          command(action);
-          event.preventDefault();
-        }
-      });
+      for (var i = 0; i < actions.length; i++) {
+        (function() {
+          var action = actions[i],
+              cmd = action.attributes["data-action"].value;
+
+          action.addEventListener("click", function(event) {
+            event.preventDefault();
+            command(cmd);
+          });
+        })()
+      }
 
       connect();
     </script>
