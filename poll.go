@@ -11,7 +11,7 @@ func poll() (<-chan (map[string]interface{}), <-chan error) {
 	errs := make(chan error)
 
 	go func() {
-		initial := false
+		initial := true
 		prevStatus := &cmus.Status{}
 		var prevErr error
 
@@ -24,10 +24,11 @@ func poll() (<-chan (map[string]interface{}), <-chan error) {
 			if err == nil {
 				diff := diffStatus(prevStatus, status)
 
-				// if previous message was an error, or status has changed, send
-				if prevErr != nil || len(diff) > 0 || !initial {
+				if initial {
+					diffs <- serializeStatus(status)
+					initial = false
+				} else if prevErr != nil || len(diff) > 0 {
 					diffs <- diff
-					initial = true
 				}
 			} else {
 				// if a new error, send error
