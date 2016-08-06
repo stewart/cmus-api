@@ -18,15 +18,60 @@
 
       .artist {
         margin: 0;
+        font-family: "Helvetica Neue", "Helvetica", "Arial", sans-serif;
         font-size: 16px;
         font-weight: normal;
       }
+
+      .progress-wrapper {
+        margin-top: 20px;
+        border-left: 1px solid black;
+        border-right: 1px solid black;
+        width: 100%;
+        height: 15px;
+        position: relative;
+      }
+
+      .progress-wrapper small {
+        position: absolute;
+        top: -10px;
+        left: 50%;
+        transform: translate(-50%);
+        font-family: "Garamond", "Palantino", "Times New Roman", sans-serif;
+        font-size: 14px;
+      }
+
+      .progress-indicator {
+        position: absolute;
+        top: 50%;
+        transform: translate(0, -50%);
+        width: 100%;
+        height: 1px;
+        background: #888;
+      }
+
+      .progress-indicator .progress {
+        height: 5px;
+        position: absolute;
+        top: -2px;
+        background: #333;
+      }
+
     </style>
   </head>
   <body>
     <div class="container">
       <h1 class="title" data-attr="title"></h1>
       <h2 class="artist" data-attr="artist"></h1>
+
+      <div class="progress-wrapper">
+        <small data-attr="progress"></small>
+
+        <div class="progress-indicator">
+          <div class="progress" data-attr="progress-indicator">
+          </div>
+        </div>
+      </div>
 
       <dl>
         <dt>Playback<dt>
@@ -160,6 +205,8 @@
       function render() {
         var title = document.querySelector("[data-attr=title]"),
             artist = document.querySelector("[data-attr=artist]"),
+            progress = document.querySelector("[data-attr=progress]"),
+            progressIndicator = document.querySelector("[data-attr=progress-indicator]"),
             playback = document.querySelector(".playback"),
             album = document.querySelector(".album");
 
@@ -179,10 +226,13 @@
               tags = state.tags;
 
           window.requestAnimationFrame(function() {
+            var width = (state.position / state.duration) * 100;
+
             title.innerHTML = tags.title;
             artist.innerHTML = tags.artist;
             album.innerHTML = tags.album;
-            playback.innerHTML = time(state.position || 0, state.duration);
+            progress.innerHTML = time(state.position || 0, state.duration);
+            progressIndicator.setAttribute("style", `width: ${width}%;`)
           });
         }
 
