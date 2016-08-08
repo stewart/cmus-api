@@ -117,6 +117,9 @@
     </div>
 
     <script>
+
+      // --- deep merge -------------------------------------------------------
+
       // https://github.com/KyleAMathews/deepmerge
       // Copyright (c) 2012 Nicholas Fisher - MIT License
       function merge(target, src) {
@@ -159,10 +162,9 @@
 
         return dest;
       }
-    </script>
 
-    <script>
-      // a redux-like dispatching data store
+      // --- store implementation ---------------------------------------------
+
       function createStore(reducer, initialState) {
         var state = initialState,
             listeners = [];
@@ -199,10 +201,9 @@
           getState: getState
         };
       };
-    </script>
 
-    <script>
-      // a reducer action to create a new state, given old state and an action
+      // --- reducer ----------------------------------------------------------
+
       function reducer(state, action) {
         switch (action.type) {
           case "patch":
@@ -211,10 +212,9 @@
 
         return state;
       }
-    </script>
 
-    <script>
-      // a wrapper class around WebSockets (WIP)
+      // --- Socket -----------------------------------------------------------
+
       var Socket = (function() {
         function Socket(url) {
           this.url = url;
@@ -227,10 +227,10 @@
 
         return Socket;
       })();
-    </script>
 
-    <script>
-      function render() {
+      // --- renderer ----------------------------------------------------------
+
+      function renderer() {
         var title = document.querySelector("[data-attr=title]"),
             artist = document.querySelector("[data-attr=artist]"),
             album = document.querySelector("[data-attr=album]"),
@@ -284,9 +284,9 @@
 
         return draw;
       }
-    </script>
 
-    <script>
+      // --- main -------------------------------------------------------------
+
       var ENDPOINT = "ws://" + window.location.host + "/ws",
           TIMEOUT_CLOSE = 4000;
 
@@ -297,7 +297,7 @@
       var slice = Array.prototype.slice,
           isArray = Array.isArray;
 
-      store.subscribe(render());
+      store.subscribe(renderer());
 
       function command(action) {
         var payload = JSON.stringify({
