@@ -213,20 +213,110 @@
         return state;
       }
 
-      // --- Socket -----------------------------------------------------------
+      // --- socket -----------------------------------------------------------
 
-      var Socket = (function() {
-        function Socket(url) {
-          this.url = url;
-          this.ws = null;
-          this.connected = false;
+      function socket(url) {
+        var ws = null,
+            timedOut = false,
+            closed = false;
+            listeners = [];
+
+        var reconnectDecay = 1.5,
+            reconnectInterval = 1000,
+            maxReconnectInterval = 30000,
+            timeoutInterval = 2000;
+
+        var reconnectAttempts = 0;
+
+        function open(reconnectAttempt) {
+          ws = new WebSocket(url);
+
+          if (!reconnectAttempt) {
+            reconnectAttempts = 0;
+          }
+
+          var local = ws;
+          var timeout = setTimeout(function() {
+            timedOut = true;
+            local.close();
+            timedOut = false;
+          }, timeoutInterval);
+
+          ws.onopen = function(event) {
+            clearTimeout(timeout);
+            reconnectAttempts = 0;
+            reconnectAttempt = false;
+          }
+
+          ws.onclose = function(event) {
+            clearTimeout(timeout);
+            ws = null;
+
+            // manually closed, don't try to reconnect
+            if (closed) {
+              return;
+            }
+
+            var timeout = reconnectInterval * Math.pow(reconnectDecay, reconnectAttempts);
+
+            if (timeout > maxReconnectInterval) {
+              timeout = maxReconnectInterval;
+            }
+
+            setTimeout(function() {
+              reconnectAttempts++;
+              open(true);
+            }, timeout);
+          }
+
+          ws.onmessage = function(event) {
+            listeners.forEach(function(callback) {
+             callback(event);
+            });
+          }
+
+          ws.onerror = function(event) {
+            console.error(event);
+          }
         }
 
-        Socket.prototype.connect = function() {
+        function subscribe(callback) {
+          var isSubscribed = true;
+
+          listeners.push(callback);
+
+          return function unsubscribe() {
+            if (!isSubscribed) {
+              return;
+            }
+
+            var index = listeners.indexOf(callback);
+
+            isSubscribed = false;
+            listeners.splice(index, 1);
+          }
         }
 
-        return Socket;
-      })();
+        function send(msg) {
+          if (ws) {
+            return ws.send(msg);
+          }
+        }
+
+        function close() {
+          if (ws) {
+            closed = true;
+            ws.close();
+          }
+        }
+
+        return {
+          open: open,
+          subscribe: subscribe,
+          send: send,
+          close: close,
+        }
+      }
 
       // --- renderer ----------------------------------------------------------
 
@@ -287,77 +377,38 @@
 
       // --- main -------------------------------------------------------------
 
-      var ENDPOINT = "ws://" + window.location.host + "/ws",
-          TIMEOUT_CLOSE = 4000;
-
-      var store = createStore(reducer, { tags: {}, settings: {} });
-
-      var socket = null;
-
       var slice = Array.prototype.slice,
           isArray = Array.isArray;
 
-      store.subscribe(renderer());
+      var ENDPOINT = "ws://" + window.location.host + "/ws";
+
+      var store = createStore(reducer, { tags: {}, settings: {} });
+      var ws = socket(ENDPOINT);
+
+      function init() {
+        store.subscribe(renderer());
+
+        ws.subscribe(function(data) {
+          var json = JSON.parse(event.data);
+
+          if (json.error) {
+            console.error(json.error);
+          } else {
+            store.dispatch({ type: "patch", data: json });
+          }
+        });
+
+        ws.open();
+      }
+
+      init();
 
       function command(action) {
         var payload = JSON.stringify({
           command: action,
         })
 
-        socket.send(payload);
-      }
-
-      function connect() {
-        var timeout;
-
-        if (socket != null) {
-          // existing socket present, disconnect it
-          socket.close(TIMEOUT_CLOSE);
-        }
-
-        socket = new WebSocket(ENDPOINT);
-
-        timeout = setTimeout(function() {
-          socket.close(TIMEOUT_CLOSE, "timeout");
-        }, 5000);
-
-        socket.addEventListener("open", onOpen(timeout));
-        socket.addEventListener("close", onClose(timeout));
-      }
-
-      function onClose(timeout) {
-        return function(event) {
-          clearTimeout(timeout);
-
-          if (event.code == TIMEOUT_CLOSE) {
-            connect();
-          } else {
-            setTimeout(connect, 1000);
-          }
-        }
-      }
-
-      function onOpen(timeout) {
-        return function() {
-          clearTimeout(timeout);
-
-          socket.addEventListener("message", onMessage);
-          socket.addEventListener("error", onError);
-        }
-      }
-
-      function onMessage(event) {
-        var json = JSON.parse(event.data);
-
-        if (json.error) {
-          console.error(json.error);
-        } else {
-          store.dispatch({ type: "patch", data: json });
-        }
-      }
-
-      function onError(event) {
-        console.error("error", event);
+        ws.send(payload);
       }
 
       var actions = document.querySelectorAll("a[data-action]")
@@ -373,8 +424,6 @@
           });
         })()
       }
-
-      connect();
     </script>
   </body>
 </html>
