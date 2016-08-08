@@ -163,44 +163,61 @@
         return dest;
       }
 
+      // --- subscriber decorator ---------------------------------------------
+
+      function subscriber(fn) {
+        return function() {
+          var listeners = [];
+
+          function callback() {
+            var args = arguments;
+
+            listeners.forEach(function(listener) {
+              listener.apply(null, args);
+            });
+          }
+
+          function subscribe(callback) {
+            var isSubscribed = true;
+
+            listeners.push(callback);
+
+            return function unsubscribe() {
+              if (!isSubscribed) {
+                return;
+              }
+
+              var index = listeners.indexOf(callback);
+
+              isSubscribed = false;
+              listeners.splice(index, 1);
+            }
+          }
+
+          var args = slice.apply(arguments);
+
+          args.push(callback);
+
+          return Object.assign(fn.apply(null, args), { subscribe: subscribe });
+        }
+      }
+
       // --- store implementation ---------------------------------------------
 
-      function createStore(reducer, initialState) {
-        var state = initialState,
-            listeners = [];
+      var createStore = subscriber(function (reducer, initialState, callback) {
+        var state = initialState;
 
         function dispatch(action) {
           state = reducer(state, action);
-          listeners.forEach(function(callback) { callback(); });
-        }
-
-        function subscribe(callback) {
-          var isSubscribed = true;
-
-          listeners.push(callback);
-
-          return function unsubscribe() {
-            if (!isSubscribed) {
-              return;
-            }
-
-            var index = listeners.indexOf(callback);
-
-            isSubscribed = false;
-            listeners.splice(index, 1);
-          }
+          callback();
         }
 
         function getState() {
           return state;
         }
 
-        return {
-          dispatch: dispatch,
-          subscribe: subscribe,
-          getState: getState
-        };
-      };
+        return { dispatch: dispatch, getState: getState };
+      });
 
       // --- reducer ----------------------------------------------------------
 
@@ -215,11 +232,10 @@
 
       // --- socket -----------------------------------------------------------
 
-      function socket(url) {
+      var socket = subscriber(function(url, callback) {
         var ws = null,
             timedOut = false,
             closed = false;
-            listeners = [];
 
         var reconnectDecay = 1.5,
             reconnectInterval = 1000,
@@ -270,30 +286,11 @@
           }
 
           ws.onmessage = function(event) {
-            listeners.forEach(function(callback) {
-             callback(event);
-            });
+            callback(event);
           }
 
           ws.onerror = function(event) {
             console.error(event);
-          }
-        }
-
-        function subscribe(callback) {
-          var isSubscribed = true;
-
-          listeners.push(callback);
-
-          return function unsubscribe() {
-            if (!isSubscribed) {
-              return;
-            }
-
-            var index = listeners.indexOf(callback);
-
-            isSubscribed = false;
-            listeners.splice(index, 1);
           }
         }
 
@@ -312,11 +309,10 @@
 
         return {
           open: open,
-          subscribe: subscribe,
           send: send,
           close: close,
         }
-      }
+      });
 
       // --- renderer ----------------------------------------------------------
 
