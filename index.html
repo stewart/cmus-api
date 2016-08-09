@@ -99,16 +99,16 @@
       </div>
 
       <div id="controls">
-        <a href="" data-action="player-prev">
+        <a href="" data-command="player-prev">
           <svg viewBox="0 0 1792 1792" xmlns="http://www.w3.org/2000/svg">
             <path d="M1747 141q19-19 32-13t13 32v1472q0 26-13 32t-32-13l-710-710q-9-9-13-19v710q0 26-13 32t-32-13l-710-710q-9-9-13-19v678q0 26-19 45t-45 19h-128q-26 0-45-19t-19-45v-1408q0-26 19-45t45-19h128q26 0 45 19t19 45v678q4-11 13-19l710-710q19-19 32-13t13 32v710q4-11 13-19z"/>
           </svg>
         </a>
 
         <!-- is dynamically set based on playback state -->
-        <a href="" data-attr="playpause" data-action="player-pause"></a>
+        <a href="" data-attr="playpause" data-command="player-pause"></a>
 
-        <a href="" data-action="player-next">
+        <a href="" data-command="player-next">
           <svg viewBox="0 0 1792 1792" xmlns="http://www.w3.org/2000/svg">
             <path d="M45 1651q-19 19-32 13t-13-32v-1472q0-26 13-32t32 13l710 710q8 8 13 19v-710q0-26 13-32t32 13l710 710q8 8 13 19v-678q0-26 19-45t45-19h128q26 0 45 19t19 45v1408q0 26-19 45t-45 19h-128q-26 0-45-19t-19-45v-678q-5 10-13 19l-710 710q-19 19-32 13t-13-32v-710q-5 10-13 19z"/>
           </svg>
@@ -117,7 +117,6 @@
     </div>
 
     <script>
-
       // --- deep merge -------------------------------------------------------
 
       // https://github.com/KyleAMathews/deepmerge
@@ -371,6 +370,21 @@
         return draw;
       }
 
+      // --- commander --------------------------------------------------------
+
+      function commander(callback) {
+        var commands = document.querySelectorAll("[data-command]")
+
+        Array.prototype.forEach.call(commands, function(el) {
+          var command = el.attributes["data-command"].value;
+
+          el.addEventListener("click", function(e) {
+            e.preventDefault();
+            callback(command);
+          })
+        });
+      }
+
       // --- main -------------------------------------------------------------
 
       var slice = Array.prototype.slice,
@@ -394,32 +408,15 @@
           }
         });
 
+        commander(function(cmd) {
+          var data = JSON.stringify({ command: cmd });
+          ws.send(data);
+        });
+
         ws.open();
       }
 
       init();
-
-      function command(action) {
-        var payload = JSON.stringify({
-          command: action,
-        })
-
-        ws.send(payload);
-      }
-
-      var actions = document.querySelectorAll("a[data-action]")
-
-      for (var i = 0; i < actions.length; i++) {
-        (function() {
-          var action = actions[i],
-              cmd = action.attributes["data-action"].value;
-
-          action.addEventListener("click", function(event) {
-            event.preventDefault();
-            command(cmd);
-          });
-        })()
-      }
     </script>
   </body>
 </html>
