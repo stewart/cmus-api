@@ -24,11 +24,11 @@ func wshandler(w http.ResponseWriter, r *http.Request) {
 
 	diffs, errs := poll()
 
-	commands := make(chan map[string]string)
+	commands := make(chan string)
 
 	go func() {
 		for {
-			cmd := make(map[string]string)
+			data := make(map[string]string)
 
 			_, message, err := conn.ReadMessage()
 			if err != nil {
@@ -38,11 +38,13 @@ func wshandler(w http.ResponseWriter, r *http.Request) {
 				break
 			}
 
-			if err := json.Unmarshal(message, &cmd); err != nil {
+			if err := json.Unmarshal(message, &data); err != nil {
 				log.Printf("error: %v", err)
 			}
 
-			commands <- cmd
+			if cmd, ok := data["command"]; ok {
+				commands <- cmd
+			}
 		}
 	}()
 
@@ -53,7 +55,7 @@ func wshandler(w http.ResponseWriter, r *http.Request) {
 		case err := <-errs:
 			conn.WriteJSON(gin.H{"error": err.Error()})
 		case cmd := <-commands:
-			client.Cmd(cmd["command"])
+			client.Cmd(cmd)
 		}
 	}
 }
