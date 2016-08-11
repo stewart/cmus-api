@@ -381,32 +381,26 @@
       var slice = Array.prototype.slice,
           isArray = Array.isArray;
 
-      var ENDPOINT = "ws://" + window.location.host + "/ws";
+      var ws = socket("ws://" + window.location.host + "/ws");
 
-      var ws = socket(ENDPOINT);
+      events.on("store.update", renderer());
 
-      function init() {
-        events.on("store.update", renderer())
+      events.on("ws.message", function(data) {
+        var json = JSON.parse(event.data);
 
-        events.on("ws.message", function(data) {
-          var json = JSON.parse(event.data);
+        if (json.error) {
+          console.error(json.error);
+        } else {
+          store.dispatch({ type: "patch", data: json });
+        }
+      })
 
-          if (json.error) {
-            console.error(json.error);
-          } else {
-            store.dispatch({ type: "patch", data: json });
-          }
-        })
+      commander(function(cmd) {
+        var data = JSON.stringify({ command: cmd });
+        ws.send(data);
+      });
 
-        commander(function(cmd) {
-          var data = JSON.stringify({ command: cmd });
-          ws.send(data);
-        });
-
-        ws.open();
-      }
-
-      init();
+      ws.open();
     </script>
   </body>
 </html>
