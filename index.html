@@ -363,7 +363,7 @@
 
       // --- commander --------------------------------------------------------
 
-      function commander(callback) {
+      (function() {
         var commands = document.querySelectorAll("[data-command]")
 
         Array.prototype.forEach.call(commands, function(el) {
@@ -371,10 +371,10 @@
 
           el.addEventListener("click", function(e) {
             e.preventDefault();
-            callback(command);
+            events.emit("command", command);
           })
         });
-      }
+      })();
 
       // --- main -------------------------------------------------------------
 
@@ -382,6 +382,8 @@
           isArray = Array.isArray;
 
       var ws = socket("ws://" + window.location.host + "/ws");
+
+      ws.open();
 
       events.on("store.update", render);
 
@@ -395,12 +397,10 @@
         }
       })
 
-      commander(function(cmd) {
+      events.on("command", function(cmd) {
         var data = JSON.stringify({ command: cmd });
         ws.send(data);
-      });
-
-      ws.open();
+      })
     </script>
   </body>
 </html>
