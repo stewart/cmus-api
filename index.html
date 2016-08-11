@@ -306,7 +306,7 @@
 
       // --- renderer ----------------------------------------------------------
 
-      function renderer() {
+      var render = (function() {
         var title = document.querySelector("[data-attr=title]"),
             artist = document.querySelector("[data-attr=artist]"),
             album = document.querySelector("[data-attr=album]"),
@@ -359,7 +359,7 @@
         }
 
         return draw;
-      }
+      })();
 
       // --- commander --------------------------------------------------------
 
@@ -383,7 +383,7 @@
 
       var ws = socket("ws://" + window.location.host + "/ws");
 
-      events.on("store.update", renderer());
+      events.on("store.update", render);
 
       events.on("ws.message", function(data) {
         var json = JSON.parse(event.data);
