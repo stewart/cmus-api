@@ -130,37 +130,37 @@
         var dest = array && [] || {};
 
         if (array) {
-            target = target || [];
-            dest = dest.concat(target);
-            src.forEach(function(e, i) {
-                if (typeof dest[i] === 'undefined') {
-                    dest[i] = e;
-                } else if (typeof e === 'object') {
-                    dest[i] = merge(target[i], e);
-                } else {
-                    if (target.indexOf(e) === -1) {
-                        dest.push(e);
-                    }
-                }
-            });
-          } else {
-            if (target && typeof target === 'object') {
-                Object.keys(target).forEach(function (key) {
-                    dest[key] = target[key];
-                })
+          target = target || [];
+          dest = dest.concat(target);
+          src.forEach(function(e, i) {
+            if (typeof dest[i] === 'undefined') {
+              dest[i] = e;
+            } else if (typeof e === 'object') {
+              dest[i] = merge(target[i], e);
+            } else {
+              if (target.indexOf(e) === -1) {
+                dest.push(e);
+              }
             }
-            Object.keys(src).forEach(function (key) {
-                if (typeof src[key] !== 'object' || !src[key]) {
-                    dest[key] = src[key];
-                }
-                else {
-                    if (!target[key]) {
-                        dest[key] = src[key];
-                    } else {
-                        dest[key] = merge(target[key], src[key]);
-                    }
-                }
-            });
+          });
+        } else {
+          if (target && typeof target === 'object') {
+            Object.keys(target).forEach(function (key) {
+              dest[key] = target[key];
+            })
+          }
+          Object.keys(src).forEach(function (key) {
+            if (typeof src[key] !== 'object' || !src[key]) {
+              dest[key] = src[key];
+            }
+            else {
+              if (!target[key]) {
+                dest[key] = src[key];
+              } else {
+                dest[key] = merge(target[key], src[key]);
+              }
+            }
+          });
         }
 
         return dest;
