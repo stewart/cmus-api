@@ -194,8 +194,8 @@
 
       // --- store implementation ---------------------------------------------
 
-      var createStore = function(reducer, initialState) {
-        var state = initialState;
+      var store = (function() {
+        var state = { tags: {}, settings: {} };
 
         function dispatch(action) {
           state = reducer(state, action);
@@ -207,7 +207,7 @@
         }
 
         return { dispatch: dispatch, getState: getState };
-      };
+      })();
 
       // --- reducer ----------------------------------------------------------
 
@@ -383,7 +383,6 @@
 
       var ENDPOINT = "ws://" + window.location.host + "/ws";
 
-      var store = createStore(reducer, { tags: {}, settings: {} });
       var ws = socket(ENDPOINT);
 
       function init() {
