@@ -117,6 +117,10 @@
     </div>
 
     <script>
+      // --- constants --------------------------------------------------------
+      var slice = Array.prototype.slice,
+          isArray = Array.isArray;
+
       // --- deep merge -------------------------------------------------------
 
       // https://github.com/KyleAMathews/deepmerge
@@ -139,7 +143,7 @@
                     }
                 }
             });
-        } else {
+          } else {
             if (target && typeof target === 'object') {
                 Object.keys(target).forEach(function (key) {
                     dest[key] = target[key];
@@ -378,29 +382,28 @@
 
       // --- main -------------------------------------------------------------
 
-      var slice = Array.prototype.slice,
-          isArray = Array.isArray;
+      (function() {
+        var ws = socket("ws://" + window.location.host + "/ws");
 
-      var ws = socket("ws://" + window.location.host + "/ws");
+        ws.open();
 
-      ws.open();
+        events.on("store.update", render);
 
-      events.on("store.update", render);
+        events.on("ws.message", function(data) {
+          var json = JSON.parse(event.data);
 
-      events.on("ws.message", function(data) {
-        var json = JSON.parse(event.data);
+          if (json.error) {
+            console.error(json.error);
+          } else {
+            store.dispatch({ type: "patch", data: json });
+          }
+        })
 
-        if (json.error) {
-          console.error(json.error);
-        } else {
-          store.dispatch({ type: "patch", data: json });
-        }
-      })
-
-      events.on("command", function(cmd) {
-        var data = JSON.stringify({ command: cmd });
-        ws.send(data);
-      })
+        events.on("command", function(cmd) {
+          var data = JSON.stringify({ command: cmd });
+          ws.send(data);
+        })
+      })();
     </script>
   </body>
 </html>
