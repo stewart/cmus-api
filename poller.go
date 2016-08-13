@@ -9,12 +9,15 @@ import (
 type Poller struct {
 	Diffs  chan map[string]interface{}
 	Errors chan error
+
+	done chan int
 }
 
 func NewPoller() *Poller {
 	p := &Poller{
 		Diffs:  make(chan map[string]interface{}),
 		Errors: make(chan error),
+		done:   make(chan int),
 	}
 
 	return p
@@ -35,15 +38,30 @@ func (p *Poller) Poll() {
 			diff := diffStatus(prevStatus, status)
 
 			if initial {
-				p.Diffs <- serializeStatus(status)
+				select {
+				case p.Diffs <- serializeStatus(status):
+				case <-p.done:
+					state.RUnlock()
+					return
+				}
 				initial = false
 			} else if prevErr != nil || len(diff) > 0 {
-				p.Diffs <- diff
+				select {
+				case p.Diffs <- diff:
+				case <-p.done:
+					state.RUnlock()
+					return
+				}
 			}
 		} else {
 			// if a new error, send error
 			if prevErr == nil || prevErr.Error() != err.Error() {
-				p.Errors <- err
+				select {
+				case p.Errors <- err:
+				case <-p.done:
+					state.RUnlock()
+					return
+				}
 			}
 		}
 
@@ -54,4 +72,8 @@ func (p *Poller) Poll() {
 
 		time.Sleep(50 * time.Millisecond)
 	}
+}
+
+func (p *Poller) Close() {
+	close(p.done)
 }

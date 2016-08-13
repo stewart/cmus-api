@@ -49,6 +49,7 @@ func server() {
 		p := NewPoller()
 
 		go p.Poll()
+		defer p.Close()
 
 		c.Stream(func(w io.Writer) bool {
 			select {

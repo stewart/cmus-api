@@ -29,6 +29,8 @@ func wshandler(w http.ResponseWriter, r *http.Request) {
 	commands := make(chan string)
 
 	go func() {
+		defer p.Close()
+
 		for {
 			data := make(map[string]string)
 
