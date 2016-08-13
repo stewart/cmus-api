@@ -23,9 +23,58 @@
         justify-content: space-between;
       }
 
-      h1.title {
+      #info, #controls-and-progress {
+        padding: 2em 3em;
+      }
+
+      #info h1, #info h2 {
+        margin: 0;
+      }
+
+      #info .title {
         font-family: "Cormorant Garamond", "Garamond", "Palatino", "Times New Roman", serif;
         font-weight: bold;
+        font-size: 70px;
+        line-height: 1.2;
+        color: #222;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        overflow: hidden;
+      }
+
+      #info .artist, #info .album {
+        font-size: 18px;
+        color: #444;
+      }
+
+      #info .album {
+        font-weight: normal;
+      }
+
+      #controls {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      #controls a {
+        text-decoration: none;
+      }
+
+      #setting-controls a {
+        padding: 0.25em 1em;
+        font-size: 1.25em;
+        color: #bbb;
+        border: 2px solid #bbb;
+      }
+
+      #setting-controls a:first-child {
+        margin-right: 1.5em;
+      }
+
+      #setting-controls a.active, #setting-controls a:active {
+        color: #444;
+        border-color: #444;
       }
 
       svg {
@@ -43,29 +92,38 @@
         <h2 class="album" data-attr="album"></h1>
       </div>
 
-      <div id="controls">
-        <a href="" data-command="player-prev">
-          <svg viewBox="0 0 154 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-            <g stroke="#444" stroke-width="3" fill="none">
-              <line x1="20" y1="15" x2="20" y2="85" />
-              <polygon points="75,15, 75,85 21,50" />
-              <polygon points="132,15, 132,85 76,50" />
-            </g>
-          </svg>
-        </a>
+      <div id="controls-and-progress">
+        <div id="controls">
+          <div id="media-controls">
+            <a href="" data-command="player-prev">
+              <svg viewBox="0 0 154 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+                <g stroke="#444" stroke-width="3" fill="none">
+                  <line x1="20" y1="15" x2="20" y2="85" />
+                  <polygon points="75,15, 75,85 21,50" />
+                  <polygon points="132,15, 132,85 76,50" />
+                </g>
+              </svg>
+            </a>
 
-        <!-- is dynamically set based on playback state -->
-        <a href="" data-attr="playpause" data-command="player-pause"></a>
+            <!-- is dynamically set based on playback state -->
+            <a href="" data-attr="playpause" data-command="player-pause"></a>
 
-        <a href="" data-command="player-next">
-          <svg viewBox="0 0 154 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-            <g stroke="#444" stroke-width="3" fill="none">
-              <polygon points="20,15, 20,85 75,50" />
-              <polygon points="77,15, 77,85 132,50" />
-              <line x1="134" y1="15" x2="134" y2="85" />
-            </g>
-          </svg>
-        </a>
+            <a href="" data-command="player-next">
+              <svg viewBox="0 0 154 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+                <g stroke="#444" stroke-width="3" fill="none">
+                  <polygon points="20,15, 20,85 75,50" />
+                  <polygon points="77,15, 77,85 132,50" />
+                  <line x1="134" y1="15" x2="134" y2="85" />
+                </g>
+              </svg>
+            </a>
+          </div>
+
+          <div id="setting-controls">
+            <a href="" data-command="toggle repeat"> repeat </a>
+            <a href="" data-command="toggle shuffle"> shuffle </a>
+          </div>
+        </div>
 
         <div class="progress-wrapper">
           <small data-attr="progress"></small>
