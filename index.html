@@ -64,8 +64,8 @@
       #setting-controls a {
         padding: 0.25em 1em;
         font-size: 1.25em;
-        color: #bbb;
-        border: 2px solid #bbb;
+        color: #aaa;
+        border: 2px solid #aaa;
       }
 
       #setting-controls a:first-child {
@@ -120,8 +120,13 @@
           </div>
 
           <div id="setting-controls">
-            <a href="" data-command="toggle repeat"> repeat </a>
-            <a href="" data-command="toggle shuffle"> shuffle </a>
+            <a href="" data-attr="repeat" data-command="toggle repeat">
+              repeat
+            </a>
+
+            <a href="" data-attr="shuffle" data-command="toggle shuffle">
+              shuffle
+            </a>
           </div>
         </div>
 
@@ -337,6 +342,8 @@
             album = document.querySelector("[data-attr=album]"),
             progress = document.querySelector("[data-attr=progress]"),
             progressIndicator = document.querySelector("[data-attr=progress-indicator]"),
+            repeat = document.querySelector("[data-attr=repeat]"),
+            shuffle = document.querySelector("[data-attr=shuffle]"),
             playpause = document.querySelector("[data-attr=playpause]");
 
         var play = `
@@ -371,9 +378,9 @@
           var state = store.getState(),
               tags = state.tags;
 
-          window.requestAnimationFrame(function() {
-            var width = (state.position / state.duration) * 100;
+          var width = (state.position / state.duration) * 100;
 
+          window.requestAnimationFrame(function() {
             if (state.playing) {
               playpause.innerHTML = pause;
             } else {
@@ -384,7 +391,19 @@
             artist.innerHTML = tags.artist;
             album.innerHTML = tags.album;
             progress.innerHTML = time(state.position || 0, state.duration);
-            progressIndicator.setAttribute("style", `width: ${width}%;`)
+            progressIndicator.setAttribute("style", `width: ${width}%;`);
+
+            if (state.settings.repeat === "true") {
+              repeat.classList.add("active");
+            } else {
+              repeat.classList.remove("active");
+            }
+
+            if (state.settings.shuffle === "true") {
+              shuffle.classList.add("active");
+            } else {
+              shuffle.classList.remove("active");
+            }
           });
         }
 
