@@ -22,7 +22,9 @@ func wshandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	diffs, errs := poll()
+	p := NewPoller()
+
+	go p.Poll()
 
 	commands := make(chan string)
 
@@ -50,9 +52,9 @@ func wshandler(w http.ResponseWriter, r *http.Request) {
 
 	for {
 		select {
-		case diff := <-diffs:
+		case diff := <-p.Diffs:
 			conn.WriteJSON(diff)
-		case err := <-errs:
+		case err := <-p.Errors:
 			conn.WriteJSON(gin.H{"error": err.Error()})
 		case cmd := <-commands:
 			client.Cmd(cmd)
