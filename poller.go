@@ -10,6 +10,10 @@ type Poller struct {
 	Diffs  chan map[string]interface{}
 	Errors chan error
 
+	initialized    bool
+	previousStatus *cmus.Status
+	previousError  error
+
 	done chan int
 }
 
@@ -17,17 +21,15 @@ func NewPoller() *Poller {
 	p := &Poller{
 		Diffs:  make(chan map[string]interface{}),
 		Errors: make(chan error),
-		done:   make(chan int),
+
+		previousStatus: &cmus.Status{},
+		done:           make(chan int),
 	}
 
 	return p
 }
 
 func (p *Poller) Poll() {
-	initial := true
-	prevStatus := &cmus.Status{}
-	var prevErr error
-
 	for {
 		state.RLock()
 
@@ -35,17 +37,17 @@ func (p *Poller) Poll() {
 		err := state.err
 
 		if err == nil {
-			diff := diffStatus(prevStatus, status)
+			diff := diffStatus(p.previousStatus, status)
 
-			if initial {
+			if !p.initialized {
 				select {
 				case p.Diffs <- serializeStatus(status):
 				case <-p.done:
 					state.RUnlock()
 					return
 				}
-				initial = false
-			} else if prevErr != nil || len(diff) > 0 {
+				p.initialized = true
+			} else if p.previousError != nil || len(diff) > 0 {
 				select {
 				case p.Diffs <- diff:
 				case <-p.done:
@@ -55,7 +57,7 @@ func (p *Poller) Poll() {
 			}
 		} else {
 			// if a new error, send error
-			if prevErr == nil || prevErr.Error() != err.Error() {
+			if p.previousError == nil || p.previousError.Error() != err.Error() {
 				select {
 				case p.Errors <- err:
 				case <-p.done:
@@ -65,8 +67,8 @@ func (p *Poller) Poll() {
 			}
 		}
 
-		prevStatus = status
-		prevErr = err
+		p.previousStatus = status
+		p.previousError = err
 
 		state.RUnlock()
 
@@ -76,4 +78,7 @@ func (p *Poller) Poll() {
 
 func (p *Poller) Close() {
 	close(p.done)
+}
+
+func (p *Poller) update() {
 }
