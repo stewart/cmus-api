@@ -14,6 +14,7 @@ type Poller struct {
 	previousStatus *cmus.Status
 	previousError  error
 
+	tick *time.Ticker
 	done chan int
 }
 
@@ -30,55 +31,46 @@ func NewPoller() *Poller {
 }
 
 func (p *Poller) Poll() {
+	p.tick = time.NewTicker(500 * time.Millisecond)
+
 	for {
-		state.RLock()
-
-		status := state.status
-		err := state.err
-
-		if err == nil {
-			diff := diffStatus(p.previousStatus, status)
-
-			if !p.initialized {
-				select {
-				case p.Diffs <- serializeStatus(status):
-				case <-p.done:
-					state.RUnlock()
-					return
-				}
-				p.initialized = true
-			} else if p.previousError != nil || len(diff) > 0 {
-				select {
-				case p.Diffs <- diff:
-				case <-p.done:
-					state.RUnlock()
-					return
-				}
-			}
-		} else {
-			// if a new error, send error
-			if p.previousError == nil || p.previousError.Error() != err.Error() {
-				select {
-				case p.Errors <- err:
-				case <-p.done:
-					state.RUnlock()
-					return
-				}
-			}
+		select {
+		case <-p.tick.C:
+			p.update()
+		case <-p.done:
+			p.tick.Stop()
+			return
 		}
-
-		p.previousStatus = status
-		p.previousError = err
-
-		state.RUnlock()
-
-		time.Sleep(50 * time.Millisecond)
 	}
+}
+
+func (p *Poller) update() {
+	state.RLock()
+	defer state.RUnlock()
+
+	status := state.status
+	err := state.err
+
+	if err == nil {
+		diff := diffStatus(p.previousStatus, status)
+
+		if !p.initialized {
+			p.Diffs <- serializeStatus(status)
+			p.initialized = true
+		} else if p.previousError != nil || len(diff) > 0 {
+			p.Diffs <- diff
+		}
+	} else {
+		// if a new error, send error
+		if p.previousError == nil || p.previousError.Error() != err.Error() {
+			p.Errors <- err
+		}
+	}
+
+	p.previousStatus = status
+	p.previousError = err
 }
 
 func (p *Poller) Close() {
 	close(p.done)
-}
-
-func (p *Poller) update() {
 }
