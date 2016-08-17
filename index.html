@@ -125,7 +125,7 @@
         height: 50px;
       }
 
-      @media only screen and (max-device-width: 570px) {
+      @media only screen and (max-width: 570px) {
         #info, #controls-and-progress {
           padding: 1em;
         }
@@ -137,6 +137,22 @@
         #info .artist, #info .album {
           font-size: 0.9em;
           color: #444;
+        }
+
+        #controls {
+          flex-direction: column;
+          justify-content: space-around;
+            height: 55vh;
+        }
+
+        #media-controls, #setting-controls {
+          width: 100%;
+          display: flex;
+          justify-content: space-around;
+        }
+
+        svg {
+          height: 75px;
         }
       }
     </style>
