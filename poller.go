@@ -7,8 +7,10 @@ import (
 )
 
 type Poller struct {
-	Diffs  chan map[string]interface{}
-	Errors chan error
+	Statuses chan map[string]interface{}
+	Errors   chan error
+
+	IncrementalUpdates bool
 
 	initialized    bool
 	previousStatus *cmus.Status
@@ -18,10 +20,15 @@ type Poller struct {
 	done chan int
 }
 
-func NewPoller() *Poller {
+// Creates a new Poller.
+// `incrementalUpdates` determines whether or not Statuses will be sent
+// incremental status diffs, or the full status on each change.
+func NewPoller(incrementalUpdates bool) *Poller {
 	p := &Poller{
-		Diffs:  make(chan map[string]interface{}),
-		Errors: make(chan error),
+		Statuses: make(chan map[string]interface{}),
+		Errors:   make(chan error),
+
+		IncrementalUpdates: incrementalUpdates,
 
 		previousStatus: &cmus.Status{},
 		done:           make(chan int),
@@ -31,7 +38,7 @@ func NewPoller() *Poller {
 }
 
 func (p *Poller) Poll() {
-	p.tick = time.NewTicker(500 * time.Millisecond)
+	p.tick = time.NewTicker(200 * time.Millisecond)
 
 	for {
 		select {
@@ -55,10 +62,14 @@ func (p *Poller) update() {
 		diff := diffStatus(p.previousStatus, status)
 
 		if !p.initialized {
-			p.Diffs <- serializeStatus(status)
+			p.Statuses <- serializeStatus(status)
 			p.initialized = true
 		} else if p.previousError != nil || len(diff) > 0 {
-			p.Diffs <- diff
+			if p.IncrementalUpdates {
+				p.Statuses <- diff
+			} else {
+				p.Statuses <- serializeStatus(status)
+			}
 		}
 	} else {
 		// if a new error, send error

@@ -521,7 +521,7 @@
       // --- main -------------------------------------------------------------
 
       (function() {
-        var ws = socket("ws://" + window.location.host + "/ws");
+        var ws = socket("ws://" + window.location.host + "/ws?diffs=true");
 
         ws.open();
 

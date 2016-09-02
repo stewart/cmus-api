@@ -46,15 +46,16 @@ func server() {
 	})
 
 	router.GET("/sse", func(c *gin.Context) {
-		p := NewPoller()
+		incrementalUpdates := (c.Query("diffs") == "true")
+		p := NewPoller(incrementalUpdates)
 
 		go p.Poll()
 		defer p.Close()
 
 		c.Stream(func(w io.Writer) bool {
 			select {
-			case diff := <-p.Diffs:
-				c.SSEvent("status", diff)
+			case status := <-p.Statuses:
+				c.SSEvent("status", status)
 			case err := <-p.Errors:
 				c.SSEvent("error", err.Error())
 			}
